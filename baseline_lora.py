@@ -66,6 +66,7 @@ def main():
     ap.add_argument("--lora_r", type=int, default=8)
     ap.add_argument("--lora_alpha", type=float, default=16.0)
     ap.add_argument("--lora_dropout", type=float, default=0.05)
+    ap.add_argument("--save_dir", default=None, help="Directory to save final model checkpoint")  # NEW
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -115,6 +116,13 @@ def main():
     print(f"tokens={token_count} throughput={token_count/max(dt,1e-6):.1f} toks/s")
     print(f"CUDA alloc={mem['alloc']:.1f}MB peak={mem['peak']:.1f}MB reserved={mem['reserved']:.1f}MB")
     print("="*80)
+
+    # --- SAVE CHECKPOINT IF SPECIFIED ---
+    if args.save_dir is not None:
+        print(f"Saving model and tokenizer to {args.save_dir} ...")
+        model.save_pretrained(args.save_dir)
+        tok.save_pretrained(args.save_dir)
+        print(f"Checkpoint saved at {args.save_dir}")
 
 if __name__ == "__main__":
     main()

@@ -53,6 +53,35 @@ def add_lora(model, r=8, alpha=16, dropout=0.05, target_modules=None):
     model.print_trainable_parameters()
     return model
 
+class LowRankLinearFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x, W_eff, b, Vk):
+        # print("x.shape:", x.shape, "Vk.shape:", Vk.shape)
+        Z = x @ Vk         # [*, k]
+        WV = W_eff @ Vk    # [out, k]
+        y = Z @ WV.t()     # [*, out]
+        if b is not None:
+            y = y + b
+        ctx.save_for_backward(Z, WV, Vk)
+        ctx.has_bias = b is not None
+        # You don’t need d_in unless for shapes, so omit as needed
+        return y
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        Z, WV, Vk = ctx.saved_tensors
+        # [*, k]
+        grad_Z = grad_output @ WV
+        # [out, k]
+        grad_WV = grad_output.transpose(-1, -2).reshape(-1, grad_output.shape[-1]).t() @ Z.reshape(-1, Z.shape[-1])
+        # [*, d_in]
+        grad_x = grad_Z @ Vk.t()
+        # [out, d_in]
+        grad_W_eff = grad_WV @ Vk.t()
+        grad_b = grad_output.sum(tuple(range(grad_output.ndim - 1))) if ctx.has_bias else None
+        grad_Vk = None  # Typically basis is frozen after warmup
+        return grad_x, grad_W_eff, grad_b, grad_Vk
+
 # -------------------- fused low-rank autograd --------------------
 class LowRankFusedModule(nn.Module):
     def __init__(self, module: nn.Module, Vk: torch.Tensor):
@@ -169,47 +198,15 @@ class LowRankFusedModule(nn.Module):
                 W_eff = W_eff_raw
             else:
                 raise RuntimeError(f"Cannot orient W: {tuple(W_eff_raw.shape)} vs input dim {d_in}")
-
+                
+        # print("Input x.shape[-1]:", d_in)
+        # print("W_eff_raw.shape:", W_eff_raw.shape, "W_eff oriented.shape:", W_eff.shape)
         return W_eff, b, base  # base is where grads must land
 
     def forward(self, x):
         Vk = self.Vk.to(x.device, x.dtype)
-        W_eff, b, base = self._effective_Wb_oriented(x)
-
-        Z  = x.matmul(Vk)                 # [..., k]
-        WV = W_eff.matmul(Vk)             # [out, k]
-        y  = Z.matmul(WV.t().to(x.dtype))
-        if b is not None:
-            y = y + b.to(y.dtype)
-
-        if self.training:
-            Zc, WVc, Vkc = Z.detach(), WV.detach(), Vk.detach()
-            W_param = base.weight
-            b_param = getattr(base, "bias", None)
-
-            def _hook(gy):
-                gx  = gy.matmul(WVc).matmul(Vkc.t())
-                gWV = gy.transpose(-1,-2).reshape(-1, gy.shape[-1]).t().matmul(Zc.reshape(-1, Zc.shape[-1]))  # [out,k]
-                gW  = gWV.matmul(Vkc.t())  # [out, d]
-                # map to base weight layout
-                if W_param.shape == gW.shape:
-                    gW_base = gW
-                elif W_param.shape == gW.t().shape:
-                    gW_base = gW.t()
-                else:
-                    raise RuntimeError(f"Grad shape mismatch: W {tuple(W_param.shape)} vs gW {tuple(gW.shape)}")
-                if W_param.grad is None: W_param.grad = torch.zeros_like(W_param)
-                W_param.grad = W_param.grad + gW_base
-                if b_param is not None:
-                    gb = gy.reshape(-1, gy.shape[-1]).sum(0).to(b_param.dtype)
-                    if b_param.grad is None: b_param.grad = torch.zeros_like(b_param)
-                    b_param.grad = b_param.grad + gb
-                return gx
-
-            y.register_hook(_hook)
-
-        return y
-
+        W_eff, b, _ = self._effective_Wb_oriented(x)
+        return LowRankLinearFunction.apply(x, W_eff, b, Vk)
 
 # -------------------- basis collector + in-place swapper --------------------
 class BasisCollectorAndSwapper:
@@ -229,10 +226,14 @@ class BasisCollectorAndSwapper:
 
     # in BasisCollectorAndSwapper._want / want
     def _want(self, name, module):
-        # match targets by name, but avoid internal base_layer nodes
-        if "base_layer" in name:
+        # avoid internal base_layer nodes and LoRA/PEFT submodules
+        forbidden_suffixes = (
+            ".loraA", ".loraB", ".lora_dropout", ".loraembeddingA", ".loraembeddingB", ".loramagnitudevector"
+        )
+        if "base_layer" in name or any(name.endswith(suf) for suf in forbidden_suffixes):
             return False
-        return any(t in name for t in self.targets)
+        # Only match if target appears at the end (e.g., ".attn.c_attn" and not ".attn.c_attn.loraA")
+        return any(name.endswith(t) for t in self.targets)
 
 
     def attach(self, model):
@@ -252,7 +253,7 @@ class BasisCollectorAndSwapper:
             if st["Vk"] is None and st["count"] < self.collect_steps:
                 with torch.no_grad():
                     x2d = x.reshape(-1, x.shape[-1])
-                    B = min(self.sample_rows, x2d.shape[0])
+                    B = x2d.shape[0]
                     st["buf"].append(x2d[:B].detach().cpu().float())
                     st["count"] += 1
                 return
@@ -264,6 +265,7 @@ class BasisCollectorAndSwapper:
             if st["Vk"] is None and st["count"] >= self.collect_steps and st["buf"]:
                 with torch.no_grad():
                     X = torch.cat(st["buf"], dim=0)  # [N, d]
+                    # print("Activation buffer shape:", X.shape)
                     d = X.shape[-1]; k = min(self.rank, d)
                     try:
                         if self.method == "pca":
@@ -275,6 +277,7 @@ class BasisCollectorAndSwapper:
                         U_, S_, Vh = torch.svd_lowrank(X, q=k)
                         V = Vh.t()
                     Vk = V[:, :k].contiguous()        # CPU fp32
+                    # print(f"Vk.shape: {Vk.shape}")
                     st["Vk"] = Vk
                     st["buf"].clear()
                     # ---- swap this module with fused low-rank wrapper ----
@@ -312,6 +315,7 @@ def main():
     ap.add_argument("--svd_method", choices=["pca","svd"], default="pca")
     ap.add_argument("--targets", default="attn.c_attn,attn.c_proj",
                     help="comma-separated module-name substrings; add mlp.c_fc if desired")
+    ap.add_argument("--save_dir", default=None, help="Directory to save model checkpoint")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -369,6 +373,10 @@ def main():
             print(f"==> All targets swapped to fused low-rank at step {step}. Resetting peak.")
             reset_peak()
             in_project_mode = True
+            mem = get_mem_mb()
+            print(
+                f"[SWAP] Post-swap memory: alloc={mem['alloc']:.1f}MB, peak={mem['peak']:.1f}MB, reserved={mem['reserved']:.1f}MB"
+            )
 
         if in_project_mode and torch.cuda.is_available():
             steady_peak = max(steady_peak, torch.cuda.max_memory_allocated()/1e6)
@@ -378,6 +386,10 @@ def main():
             mode = "collect" if mode_collecting else "project"
             print(f"[fused] step {step:03d} | loss {loss.item():.3f} | mode={mode} | "
                   f"alloc={mem['alloc']:.1f}MB peak={mem['peak']:.1f}MB reserved={mem['reserved']:.1f}MB")
+
+    print("=== Collector State Summary ===")
+    for name, st in inserter.state.items():
+        print(f"{name}: collected {st['count']} / {inserter.collect_steps}, Vk: {'set' if st['Vk'] is not None else 'None'}")
 
     dt = time.time() - t0
     mem = get_mem_mb()
@@ -391,6 +403,13 @@ def main():
     if in_project_mode:
         print(f"STEADY-STATE PEAK (after swap): {steady_peak:.1f}MB")
     print("="*80)
+
+    # Save checkpoint if requested
+    if args.save_dir is not None:
+        print(f"Saving model checkpoint to {args.save_dir} ...")
+        model.save_pretrained(args.save_dir)
+        tok.save_pretrained(args.save_dir)
+        print(f"Checkpoint saved at {args.save_dir}")
 
     for h in handles: h.remove()
 
