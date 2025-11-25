@@ -1,9 +1,9 @@
 ---
-base_model: gpt2-large
+base_model: meta-llama/Llama-3.2-1B-Instruct
 library_name: peft
 pipeline_tag: text-generation
 tags:
-- base_model:adapter:gpt2-large
+- base_model:adapter:meta-llama/Llama-3.2-1B-Instruct
 - lora
 - transformers
 ---

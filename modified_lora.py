@@ -1,12 +1,15 @@
-# lora_svd_mem_fused.py
-# pip install torch transformers peft accelerate
+# llama_svd_mem_fused.py
+# pip install torch transformers accelerate wandb
 
-import argparse, time
+import argparse, time, math
 import torch
 import torch.nn as nn
 from torch.autograd import Function
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import LoraConfig, get_peft_model
+from transformers import LlamaForCausalLM, AutoTokenizer
+import wandb
+
+import sys
+sys.stdout = open("debug_output.txt", "w")
 
 # -------------------- memory helpers --------------------
 def get_mem_mb():
@@ -29,7 +32,7 @@ def make_toy_texts(num=4096):
         "Large language models enable powerful text generation.",
         "Parameter-efficient fine-tuning reduces compute and memory.",
         "Activation memory dominates backpropagation costs.",
-        "LoRA adds low-rank adapters to attention projections.",
+        "Low-rank projection can reduce GPU storage.",
         "Tiny datasets are handy for quick debugging.",
         "Edge devices benefit from compact models.",
     ]
@@ -37,185 +40,90 @@ def make_toy_texts(num=4096):
     return texts
 
 def toy_batch(tok, texts, device):
-    enc = tok(texts, padding=True, truncation=True, return_tensors="pt")
+    enc = tok(texts, padding=True, truncation=True, max_length=256, return_tensors="pt")
     for k in enc: enc[k] = enc[k].to(device)
     enc["labels"] = enc["input_ids"].clone()
     return enc
 
-# -------------------- LoRA helper --------------------
-def add_lora(model, r=8, alpha=16, dropout=0.05, target_modules=None):
-    target_modules = target_modules or ["c_attn", "c_proj"]
-    cfg = LoraConfig(
-        r=r, lora_alpha=alpha, lora_dropout=dropout,
-        target_modules=target_modules, bias="none", task_type="CAUSAL_LM"
-    )
-    model = get_peft_model(model, cfg)
-    model.print_trainable_parameters()
-    return model
-
+# -------------------- Fused custom linear --------------------
 class LowRankLinearFunction(torch.autograd.Function):
+    total_forward_calls = 0
+    total_backward_calls = 0
+
     @staticmethod
     def forward(ctx, x, W_eff, b, Vk):
-        # print("x.shape:", x.shape, "Vk.shape:", Vk.shape)
+        LowRankLinearFunction.total_forward_calls += 1
+        # Print every 100 calls to avoid log spam
+        # if LowRankLinearFunction.total_forward_calls % 100 == 0:
+            # print(f"[LowRankLinearFunction] FORWARD call {LowRankLinearFunction.total_forward_calls}")
         Z = x @ Vk         # [*, k]
         WV = W_eff @ Vk    # [out, k]
         y = Z @ WV.t()     # [*, out]
         if b is not None:
             y = y + b
         ctx.save_for_backward(Z, WV, Vk)
+        print(f"[DEBUG] LowRankLinearFunction.forward ctx save: Z.shape={Z.shape}, WV.shape={WV.shape}, Vk.shape={Vk.shape}")
         ctx.has_bias = b is not None
-        # You don’t need d_in unless for shapes, so omit as needed
         return y
 
     @staticmethod
     def backward(ctx, grad_output):
+        LowRankLinearFunction.total_backward_calls += 1
+        # if LowRankLinearFunction.total_backward_calls % 100 == 0:
+        #     # print(f"[LowRankLinearFunction] BACKWARD call {LowRankLinearFunction.total_backward_calls}")
         Z, WV, Vk = ctx.saved_tensors
-        # [*, k]
-        grad_Z = grad_output @ WV
-        # [out, k]
-        grad_WV = grad_output.transpose(-1, -2).reshape(-1, grad_output.shape[-1]).t() @ Z.reshape(-1, Z.shape[-1])
-        # [*, d_in]
-        grad_x = grad_Z @ Vk.t()
-        # [out, d_in]
-        grad_W_eff = grad_WV @ Vk.t()
+        print(f"[DEBUG] LowRankLinearFunction.backward ctx restore: Z.shape={Z.shape}, WV.shape={WV.shape}, Vk.shape={Vk.shape}")
+        grad_Z = grad_output @ WV                            # [*, k]
+        grad_WV = grad_output.transpose(-1, -2).reshape(-1, grad_output.shape[-1]).t() @ Z.reshape(-1, Z.shape[-1])  # [out, k]
+        grad_x = grad_Z @ Vk.t()                             # [*, d_in]
+        grad_W_eff = grad_WV @ Vk.t()                        # [out, d_in]
         grad_b = grad_output.sum(tuple(range(grad_output.ndim - 1))) if ctx.has_bias else None
         grad_Vk = None  # Typically basis is frozen after warmup
         return grad_x, grad_W_eff, grad_b, grad_Vk
 
-# -------------------- fused low-rank autograd --------------------
 class LowRankFusedModule(nn.Module):
     def __init__(self, module: nn.Module, Vk: torch.Tensor):
         super().__init__()
-        self.mod = module            # may be PEFT LoRA wrapper
-        self.register_buffer("Vk", Vk.float(), persistent=False)
-
-    @staticmethod
-    def _peel_wrappers(mod):
-        """
-        Returns (outer_wrapper, base) where:
-          - outer_wrapper is the first module that may carry LoRA params (lora_A/B, scaling, fan_in_fan_out)
-          - base is the leaf module that actually owns .weight/.bias (Linear or Conv1D)
-        This also peels off our own LowRankFusedModule if it appears as a base.
-        """
-        outer = mod
-        base  = mod
-
-        # keep the first module that has LoRA attrs as 'outer'
-        if not (hasattr(outer, "lora_A") and hasattr(outer, "lora_B")):
-            outer = None
-
-        # unwrap repeatedly: PEFT wrappers have .base_layer
-        seen = set()
-        cur = mod
-        while True:
-            if id(cur) in seen:
-                break  # safety
-            seen.add(id(cur))
-
-            # If it's our own wrapper (from an earlier swap), peel to its .mod
-            if isinstance(cur, LowRankFusedModule):
-                cur = cur.mod
-                continue
-
-            # If it exposes LoRA attrs and we haven't recorded an outer yet, set it
-            if outer is None and hasattr(cur, "lora_A") and hasattr(cur, "lora_B"):
-                outer = cur
-
-            # PEFT LoRA wrappers have .base_layer
-            if hasattr(cur, "base_layer"):
-                cur = cur.base_layer
-                continue
-            break
-
-        base = cur
-        return outer, base
-
-    @staticmethod
-    def _is_conv1d_like(base):
-        return hasattr(base, "weight") and base.weight.ndim == 2 and not isinstance(base, nn.Linear)
-
-    @staticmethod
-    def _get_lora_tuple(wrapper):
-        # ... your usual logic ...
-        if hasattr(wrapper, "lora_A") and hasattr(wrapper, "lora_B") and len(wrapper.lora_A) > 0:
-            name = next(iter(wrapper.lora_A.keys()))
-            A = wrapper.lora_A[name]
-            B = wrapper.lora_B[name]
-            # Insert here:
-            if isinstance(A, nn.Linear):
-                A = A.weight
-            if isinstance(B, nn.Linear):
-                B = B.weight
-            scaling = float(wrapper.scaling.get(name, wrapper.scaling.get("default", 1.0)))
-            fio = bool(getattr(wrapper, "fan_in_fan_out", False))
-            return (A, B, scaling, fio)
-        return (None, None, 1.0, False)
-
+        self.mod = module
+        self.register_buffer("Vk", Vk.cpu().float(), persistent=False)
 
     def _effective_Wb_oriented(self, x):
-        # unwrap chain
-        wrapper, base = self._peel_wrappers(self.mod)
-
+        # Base: always use the (swapped) module's .weight + .bias.
+        base = self.mod
         if not hasattr(base, "weight"):
             raise RuntimeError(f"Base module has no weight: {type(base)}")
         W_base = base.weight
         b      = getattr(base, "bias", None)
-
-        # LoRA delta from the outermost wrapper (if present)
-        A, B, scaling, fio = self._get_lora_tuple(wrapper)
-        # print("A shape:", A.shape)
-        # print("B shape:", B.shape)
-        # print("Delta shape:", (B @ A).shape)
-        if A is not None:
-            if fio:
-                # fan-in/fan-out path (Conv1D-style): W <- W + (A @ B).T * scaling
-                delta = (B @ A).t()
-            else:
-                # Linear-style: W <- W + (B @ A) * scaling
-                delta = (B @ A)
-
-            if delta.shape == W_base.shape:
-                W_eff_raw = W_base + delta * scaling
-            elif delta.t().shape == W_base.shape:
-                W_eff_raw = W_base + delta.t() * scaling
-            else:
-                # unexpected; fall back to base only
-                W_eff_raw = W_base
-        else:
-            W_eff_raw = W_base
-
         d_in = x.shape[-1]
-
         # Orient to [out, d_in]
-        if W_eff_raw.ndim == 2 and W_eff_raw.shape[1] == d_in:
-            W_eff = W_eff_raw
-        elif W_eff_raw.ndim == 2 and W_eff_raw.shape[0] == d_in:
-            W_eff = W_eff_raw.t().contiguous()
+        if W_base.ndim == 2 and W_base.shape[1] == d_in:
+            W_eff = W_base
+        elif W_base.ndim == 2 and W_base.shape[0] == d_in:
+            W_eff = W_base.t().contiguous()
         else:
-            if d_in == W_eff_raw.shape[0]:
-                W_eff = W_eff_raw.t().contiguous()
-            elif d_in == W_eff_raw.shape[1]:
-                W_eff = W_eff_raw
+            if d_in == W_base.shape[0]:
+                W_eff = W_base.t().contiguous()
+            elif d_in == W_base.shape[1]:
+                W_eff = W_base
             else:
-                raise RuntimeError(f"Cannot orient W: {tuple(W_eff_raw.shape)} vs input dim {d_in}")
-                
-        # print("Input x.shape[-1]:", d_in)
-        # print("W_eff_raw.shape:", W_eff_raw.shape, "W_eff oriented.shape:", W_eff.shape)
-        return W_eff, b, base  # base is where grads must land
+                raise RuntimeError(f"Cannot orient W: {tuple(W_base.shape)} vs input dim {d_in}")
+        return W_eff, b, base
 
     def forward(self, x):
         Vk = self.Vk.to(x.device, x.dtype)
+        # print("x.shape", x.shape, "Vk.shape", Vk.shape)
         W_eff, b, _ = self._effective_Wb_oriented(x)
+        # print(f"[LowRankFusedModule] Calling forward")
         return LowRankLinearFunction.apply(x, W_eff, b, Vk)
 
 # -------------------- basis collector + in-place swapper --------------------
 class BasisCollectorAndSwapper:
     """
     Warm-up to build Vk at selected modules, then swap each with LowRankFusedModule(Vk).
-    After swap: no pre-projection; fused op enforces low-rank and saves k-dim state.
+    After swap: fused op does activation projection for memory savings.
     """
     def __init__(self, rank=32, collect_steps=30, sample_rows=16, method="pca",
-                 targets=("attn.c_attn","attn.c_proj")):
+                 targets=("self_attn.q_proj","self_attn.k_proj","self_attn.v_proj")):
         self.rank = rank
         self.collect_steps = collect_steps
         self.sample_rows = sample_rows
@@ -224,17 +132,13 @@ class BasisCollectorAndSwapper:
         self.state = {}       # name -> {"Vk": None|Tensor, "buf": [], "count": 0}
         self.root = None
 
-    # in BasisCollectorAndSwapper._want / want
     def _want(self, name, module):
-        # avoid internal base_layer nodes and LoRA/PEFT submodules
         forbidden_suffixes = (
             ".loraA", ".loraB", ".lora_dropout", ".loraembeddingA", ".loraembeddingB", ".loramagnitudevector"
         )
         if "base_layer" in name or any(name.endswith(suf) for suf in forbidden_suffixes):
             return False
-        # Only match if target appears at the end (e.g., ".attn.c_attn" and not ".attn.c_attn.loraA")
-        return any(name.endswith(t) for t in self.targets)
-
+        return any(t in name for t in self.targets)
 
     def attach(self, model):
         self.root = model
@@ -265,70 +169,91 @@ class BasisCollectorAndSwapper:
             if st["Vk"] is None and st["count"] >= self.collect_steps and st["buf"]:
                 with torch.no_grad():
                     X = torch.cat(st["buf"], dim=0)  # [N, d]
-                    # print("Activation buffer shape:", X.shape)
-                    d = X.shape[-1]; k = min(self.rank, d)
+                    d = X.shape[-1]
+                    k = min(self.rank, d, X.shape[0])
+                    # print(f"ACTIVATION BUFF SHAPE: {[a.shape for a in st['buf']]}")
+                    # print(f"X SHAPE (concat): {X.shape}")
                     try:
                         if self.method == "pca":
                             U, S, V = torch.pca_lowrank(X, q=k, center=False)
+                            Vk = V[:, :k].contiguous()
                         else:
                             U_, S_, Vh = torch.svd_lowrank(X, q=k)
-                            V = Vh.t()
+                            Vk = Vh[:k, :].t().contiguous()
                     except Exception:
                         U_, S_, Vh = torch.svd_lowrank(X, q=k)
-                        V = Vh.t()
-                    Vk = V[:, :k].contiguous()        # CPU fp32
-                    # print(f"Vk.shape: {Vk.shape}")
+                        Vk = Vh[:k, :].t().contiguous()
+                    del X
+                    if "U" in locals(): del U
+                    if "S" in locals(): del S
+                    if "V" in locals(): del V
+                    if "U_" in locals(): del U_
+                    if "S_" in locals(): del S_
+                    if "Vh" in locals(): del Vh
                     st["Vk"] = Vk
                     st["buf"].clear()
-                    # ---- swap this module with fused low-rank wrapper ----
                     self._replace_by_name(self.root, name, LowRankFusedModule(module, Vk))
+                    # print("Vk shape: ", Vk.shape)
         return hook
 
     @staticmethod
     def _replace_by_name(root, dotted, new_mod):
-        # Only replace top-level modules, not LoRA's internal attributes
         forbidden = ("lora_A", "lora_B", "lora_dropout")
         if any(f in dotted for f in forbidden):
-            # print(f"SKIP REPLACING {dotted}: is a LoRA param or submodule")
             return
         parts = dotted.split(".")
         parent = root
         for p in parts[:-1]:
             parent = getattr(parent, p)
-        # print(f"Replacing {dotted}: was {type(getattr(parent, parts[-1]))}, now {type(new_mod)})")
         setattr(parent, parts[-1], new_mod)
 
+# -------------------- LR scheduler helper --------------------
+def make_scheduler(optimizer, total_steps, warmup_steps=0, kind="cosine"):
+    if kind == "none":
+        return None
+    def lr_lambda(step):
+        if warmup_steps > 0 and step < warmup_steps:
+            return float(step) / float(max(1, warmup_steps))
+        progress = (step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+        progress = min(max(progress, 0.0), 1.0)
+        if kind == "linear":
+            return 1.0 - progress
+        elif kind == "cosine":
+            return 0.5 * (1.0 + math.cos(math.pi * progress))
+        else:
+            return 1.0
+    return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
 # -------------------- training loop --------------------
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="distilgpt2")
+    ap.add_argument("--model", default="meta-llama/Llama-3.2-3B-Instruct")
     ap.add_argument("--steps", type=int, default=200)
     ap.add_argument("--batch_size", type=int, default=8)
     ap.add_argument("--lr", type=float, default=2e-4)
-    ap.add_argument("--lora_r", type=int, default=8)
-    ap.add_argument("--lora_alpha", type=float, default=16.0)
-    ap.add_argument("--lora_dropout", type=float, default=0.05)
     ap.add_argument("--svd_rank", type=int, default=32)
     ap.add_argument("--svd_collect", type=int, default=30)
     ap.add_argument("--svd_sample_rows", type=int, default=16)
     ap.add_argument("--svd_method", choices=["pca","svd"], default="pca")
-    ap.add_argument("--targets", default="attn.c_attn,attn.c_proj",
-                    help="comma-separated module-name substrings; add mlp.c_fc if desired")
+    ap.add_argument("--targets", default="self_attn.q_proj,self_attn.k_proj,self_attn.v_proj",
+                    help="comma-separated module-name substrings")
     ap.add_argument("--save_dir", default=None, help="Directory to save model checkpoint")
+    # W&B + LR schedule
+    ap.add_argument("--wandb", action="store_true", help="Enable Weights & Biases logging")
+    ap.add_argument("--wandb_project", default="llama-svd-fused", help="W&B project name")
+    ap.add_argument("--wandb_run_name", default=None, help="W&B run name (optional)")
+    ap.add_argument("--lr_schedule", choices=["none", "cosine", "linear"], default="cosine",
+                    help="Learning-rate schedule")
+    ap.add_argument("--lr_warmup_steps", type=int, default=50, help="Warmup steps for LR schedule")
+
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tok = AutoTokenizer.from_pretrained(args.model)
     if tok.pad_token is None: tok.pad_token = tok.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
+    model = LlamaForCausalLM.from_pretrained(args.model).to(device)
 
-    # LoRA (weights low-rank) unchanged
-    model = add_lora(model, r=args.lora_r, alpha=args.lora_alpha,
-                     dropout=args.lora_dropout, target_modules=["c_attn","c_proj"])
-
-    # Learn Vk, then swap to fused low-rank layers at targets
     inserter = BasisCollectorAndSwapper(
         rank=args.svd_rank,
         collect_steps=args.svd_collect,
@@ -338,9 +263,51 @@ def main():
     )
     handles = inserter.attach(model)
 
+    # Diagnostic: Print all torch.nn.Linear modules still present
+    print("=== All linear modules after swapping ===")
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            print(f"Linear: {name}")
+
+    # Diagnostic: Print all swapped modules (should match your targets)
+    print("=== All LowRankFusedModules after swapping ===")
+    for name, module in model.named_modules():
+        if isinstance(module, LowRankFusedModule):
+            print(f"Swapped: {name}")
+
+    # ----- W&B init -----
+    if args.wandb:
+        wandb.init(
+            project=args.wandb_project,
+            name=args.wandb_run_name,
+            config={
+                "model": args.model,
+                "steps": args.steps,
+                "batch_size": args.batch_size,
+                "lr": args.lr,
+                "lr_schedule": args.lr_schedule,
+                "lr_warmup_steps": args.lr_warmup_steps,
+                "svd_rank": args.svd_rank,
+                "svd_collect": args.svd_collect,
+                "svd_sample_rows": args.svd_sample_rows,
+                "svd_method": args.svd_method,
+                "targets": args.targets,
+            }
+        )
+        wandb.define_metric("train/step")
+        wandb.define_metric("train/*", step_metric="train/step")
+        wandb.watch(model, log="gradients", log_freq=50)
+
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr)
     model.train()
     texts = make_toy_texts(10000)
+
+    total_steps = min(args.steps, len(texts) // args.batch_size)
+    scheduler = make_scheduler(
+        opt, total_steps=total_steps,
+        warmup_steps=args.lr_warmup_steps,
+        kind=args.lr_schedule
+    )
 
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -351,23 +318,30 @@ def main():
     steady_peak = 0.0
     overall_peak = 0.0
 
-    for step in range(args.steps):
+    for step in range(total_steps):
         s, e = step*args.batch_size, (step+1)*args.batch_size
-        if e > len(texts): break
         batch = toy_batch(tok, texts[s:e], device)
 
         out = model(**batch)
         loss = out.loss
         loss.backward()
-        opt.step(); opt.zero_grad(set_to_none=True)
+        mem_stats = get_mem_mb()
+        print(f"After backward: CUDA alloc={mem_stats['alloc']:.1f}MB peak={mem_stats['peak']:.1f}MB reserved={mem_stats['reserved']:.1f}MB")
+
+        grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1e9)
+
+        opt.step()
+        mem_stats = get_mem_mb()
+        print(f"After optimizer: CUDA alloc={mem_stats['alloc']:.1f}MB peak={mem_stats['peak']:.1f}MB reserved={mem_stats['reserved']:.1f}MB")
+        if scheduler is not None:
+            scheduler.step()
+        opt.zero_grad(set_to_none=True)
 
         token_count += int(batch["input_ids"].numel())
-
         if torch.cuda.is_available():
             torch.cuda.synchronize()
             overall_peak = max(overall_peak, torch.cuda.max_memory_allocated()/1e6)
 
-        # detect when all targets have Vk and were swapped
         mode_collecting = any(st["Vk"] is None for st in inserter.state.values())
         if not in_project_mode and not mode_collecting:
             print(f"==> All targets swapped to fused low-rank at step {step}. Resetting peak.")
@@ -378,24 +352,60 @@ def main():
                 f"[SWAP] Post-swap memory: alloc={mem['alloc']:.1f}MB, peak={mem['peak']:.1f}MB, reserved={mem['reserved']:.1f}MB"
             )
 
+            print("=== Per-module Vk buffer reports after swap ===")
+            total_swapped = 0
+            for name, module in model.named_modules():
+                if isinstance(module, LowRankFusedModule):
+                    print("Swapped:", name)
+                    total_swapped += 1
+                    buf = getattr(module, "Vk", None)
+                    if buf is not None:
+                        print(f"  {name}: Vk.shape={tuple(buf.shape)}, Vk.device={buf.device}, Vk.dtype={buf.dtype}, Vk.nbytes={buf.element_size() * buf.nelement() / 1e6:.1f}MB")
+            print("===============================================")
+            print(f"Total swapped: {total_swapped}")
+
+            print("=== Remaining standard linear modules after all swaps ===")
+            for name, module in model.named_modules():
+                if isinstance(module, nn.Linear):
+                    print("Linear:", name)
+
         if in_project_mode and torch.cuda.is_available():
             steady_peak = max(steady_peak, torch.cuda.max_memory_allocated()/1e6)
 
         if step % 10 == 0:
             mem = get_mem_mb()
             mode = "collect" if mode_collecting else "project"
+            current_lr = opt.param_groups[0]["lr"]
             print(f"[fused] step {step:03d} | loss {loss.item():.3f} | mode={mode} | "
+                  f"lr={current_lr:.6g} | grad_norm={float(grad_norm):.3f} | "
                   f"alloc={mem['alloc']:.1f}MB peak={mem['peak']:.1f}MB reserved={mem['reserved']:.1f}MB")
 
+        if args.wandb:
+            mem_now = get_mem_mb()
+            current_lr = opt.param_groups[0]["lr"]
+            wandb.log({
+                "train/step": step,
+                "train/loss": float(loss.item()),
+                "train/lr": float(current_lr),
+                "train/grad_norm": float(grad_norm),
+                "train/mem_alloc_MB": mem_now["alloc"],
+                "train/mem_peak_MB": mem_now["peak"],
+                "train/mem_reserved_MB": mem_now["reserved"],
+                "train/mode_collect": 1.0 if mode_collecting else 0.0,
+                "train/tokens_cum": token_count,
+            })
+
     print("=== Collector State Summary ===")
+    print("Total FORWARD calls:", LowRankLinearFunction.total_forward_calls)
+    print("Total BACKWARD calls:", LowRankLinearFunction.total_backward_calls)
     for name, st in inserter.state.items():
         print(f"{name}: collected {st['count']} / {inserter.collect_steps}, Vk: {'set' if st['Vk'] is not None else 'None'}")
 
     dt = time.time() - t0
     mem = get_mem_mb()
     print("="*80)
-    print(f"LoRA + Fused Low-Rank (targets={args.targets})")
-    print(f"model={args.model} steps={args.steps} batch={args.batch_size} "
+    print(f"Llama-3 + Fused Low-Rank (targets={args.targets})")
+    print(f"model={args.model} steps={total_steps} batch={args.batch_size} "
           f"rank={args.svd_rank} collect={args.svd_collect} method={args.svd_method}")
     print(f"tokens={token_count} throughput={token_count/max(dt,1e-6):.1f} toks/s")
     print(f"CUDA alloc={mem['alloc']:.1f}MB peak={mem['peak']:.1f}MB reserved={mem['reserved']:.1f}MB")
@@ -404,7 +414,6 @@ def main():
         print(f"STEADY-STATE PEAK (after swap): {steady_peak:.1f}MB")
     print("="*80)
 
-    # Save checkpoint if requested
     if args.save_dir is not None:
         print(f"Saving model checkpoint to {args.save_dir} ...")
         model.save_pretrained(args.save_dir)
@@ -412,6 +421,9 @@ def main():
         print(f"Checkpoint saved at {args.save_dir}")
 
     for h in handles: h.remove()
+
+    if args.wandb:
+        wandb.finish()
 
 if __name__ == "__main__":
     main()
