@@ -120,7 +120,7 @@ def main():
         "Learning rate schedules help neural nets converge."
     ]
     
-    d_model=1024; k=128; n_layers=16; n_heads=16; n_kv_heads=4; ffn_dim=4096
+    d_model=1024; k=384; n_layers=16; n_heads=16; n_kv_heads=4; ffn_dim=4096
     device="cuda" if torch.cuda.is_available() else "cpu"
 
     # --- Collect basis from embs (unchanged) ---
@@ -167,13 +167,26 @@ def main():
         optimizer.step()
         scheduler.step()
 
+
+        # --- Memory logging ---
+        mem_alloc = mem_peak = mem_reserved = 0.0
+        if torch.cuda.is_available():
+            mem_alloc = torch.cuda.memory_allocated() / 1e6
+            mem_peak = torch.cuda.max_memory_allocated() / 1e6
+            mem_reserved = torch.cuda.memory_reserved() / 1e6
+
         wandb.log({
             "loss": float(loss.item()),
             "learning_rate": lr,
             "grad_norm": float(grad_norm),
+            "mem_allocated_MB": mem_alloc,
+            "mem_peak_MB": mem_peak,
+            "mem_reserved_MB": mem_reserved,
             "step": step,
         })
-        print(f"step={step:02d} | loss={loss.item():.4f} | lr={lr:.2e} | grad_norm={float(grad_norm):.2f}")
+
+        print(f"step={step:02d} | loss={loss.item():.4f} | lr={lr:.2e} | grad_norm={float(grad_norm):.2f} | "
+              f"mem_alloc={mem_alloc:.1f}MB mem_peak={mem_peak:.1f}MB mem_reserved={mem_reserved:.1f}MB")
 
     print("DONE. Check W&B dashboard for learning curves.")
 

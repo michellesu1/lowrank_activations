@@ -110,7 +110,7 @@ def main():
         "Learning rate schedules help neural nets converge."
     ]
     
-    device="cuda" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     model = Llama3_1B(
         vocab_size=vocab_size, d_model=1024,
         n_heads=16, n_kv_heads=4, ffn_dim=4096, n_layers=16
@@ -118,19 +118,18 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=25)
     ce_loss = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
-    steps = 40  # Training epochs: more means better curve
+    steps = 40
 
     for step in range(steps):
-        # Tokenize and mask for next-token prediction
         toks = tokenizer(
-            sentences * ((batch + len(sentences) - 1) // len(sentences)),  # repeat as needed
+            sentences * ((batch + len(sentences) - 1) // len(sentences)),
             padding="max_length", truncation=True, max_length=seq_len + 1, return_tensors="pt"
         )
-        all_ids = toks["input_ids"][:batch].to(device)  # [batch, seq_len+1]
-        input_ids = all_ids[:, :-1]                     # Inputs: [batch, seq_len]
-        targets = all_ids[:, 1:]                        # Next tokens: [batch, seq_len]
+        all_ids = toks["input_ids"][:batch].to(device)
+        input_ids = all_ids[:, :-1]
+        targets = all_ids[:, 1:]
 
-        logits = model(input_ids)                       # [batch, seq_len, vocab_size]
+        logits = model(input_ids)
         logits = logits.contiguous().view(-1, vocab_size)
         targets = targets.contiguous().view(-1)
         loss = ce_loss(logits, targets)
@@ -142,16 +141,27 @@ def main():
         optimizer.step()
         scheduler.step()
 
+        # --- Memory logging ---
+        mem_alloc = mem_peak = mem_reserved = 0.0
+        if torch.cuda.is_available():
+            mem_alloc = torch.cuda.memory_allocated() / 1e6
+            mem_peak = torch.cuda.max_memory_allocated() / 1e6
+            mem_reserved = torch.cuda.memory_reserved() / 1e6
+
         wandb.log({
             "loss": float(loss.item()),
             "learning_rate": lr,
             "grad_norm": float(grad_norm),
+            "mem_allocated_MB": mem_alloc,
+            "mem_peak_MB": mem_peak,
+            "mem_reserved_MB": mem_reserved,
             "step": step,
         })
 
-        print(f"step={step:02d} | loss={loss.item():.4f} | lr={lr:.2e} | grad_norm={float(grad_norm):.2f}")
+        print(f"step={step:02d} | loss={loss.item():.4f} | lr={lr:.2e} | grad_norm={float(grad_norm):.2f} | "
+              f"mem_alloc={mem_alloc:.1f}MB mem_peak={mem_peak:.1f}MB mem_reserved={mem_reserved:.1f}MB")
 
-    print("DONE. Check W&B dashboard for full metric curves.")
+    print("DONE. Check W&B dashboard for full metric and memory curves.")
 
 if __name__ == "__main__":
     main()
