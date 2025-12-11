@@ -47,6 +47,47 @@ def apply_rope(x, position_ids, rope_theta=500000):
     x_rope[..., 1::2] = x2 * cos + x1 * sin
     return x_rope
 
+class SimpleMHA(nn.Module):
+    def __init__(self, dim, n_heads, attn_dropout=0.0):
+        super().__init__()
+        self.n_heads = n_heads
+        self.head_dim = dim // n_heads
+
+        self.q_proj = nn.Linear(dim, dim, bias=False)
+        self.k_proj = nn.Linear(dim, dim, bias=False)
+        self.v_proj = nn.Linear(dim, dim, bias=False)
+        self.out_proj = nn.Linear(dim, dim, bias=False)
+        self.attn_dropout = nn.Dropout(attn_dropout)
+
+    def forward(self, x, attn_mask=None):
+        B, S, D = x.shape
+        H, hd = self.n_heads, self.head_dim
+
+        q = self.q_proj(x).view(B, S, H, hd).transpose(1, 2)  # (B,H,S,hd)
+        k = self.k_proj(x).view(B, S, H, hd).transpose(1, 2)
+        v = self.v_proj(x).view(B, S, H, hd).transpose(1, 2)
+
+        scores = torch.matmul(q, k.transpose(-1, -2)) / (hd ** 0.5)  # (B,H,S,S)
+
+        # Causal mask
+        causal = torch.triu(torch.ones(S, S, device=x.device, dtype=torch.bool), 1)
+        scores = scores.masked_fill(causal, float("-inf"))
+
+        if attn_mask is not None:
+            # attn_mask here is already (B,1,1,S)
+            # expand over heads: (B,1,1,S) -> (B,H,S,S) via broadcast on last dim
+            mask = attn_mask.to(torch.bool)  # (B,1,1,S)
+            scores = scores.masked_fill(~mask, float("-inf"))
+
+        scores = scores - scores.max(dim=-1, keepdim=True).values
+        attn = F.softmax(scores, dim=-1)
+        attn = self.attn_dropout(attn)
+
+        z = torch.matmul(attn, v)  # (B,H,S,hd)
+        z = z.transpose(1, 2).contiguous().view(B, S, D)
+        return self.out_proj(z)
+
+
 # ---------------- GQA Attention ----------------
 
 class GQAttention(nn.Module):
@@ -114,6 +155,20 @@ class LlamaMLP(nn.Module):
         return self.down_proj(F.silu(self.gate_proj(x)) * self.up_proj(x))
 
 # ---------------- Transformer Block ----------------
+
+# class LlamaBlock(nn.Module):
+#     def __init__(self, d_model, ffn_dim, n_heads, n_kv_heads, attn_dropout=0.0):
+#         super().__init__()
+#         self.norm1 = RMSNorm(d_model)
+#         self.attn = SimpleMHA(d_model, n_heads, attn_dropout=attn_dropout)
+#         self.norm2 = RMSNorm(d_model)
+#         self.ffn = LlamaMLP(d_model, ffn_dim, use_bias=False)
+
+#     def forward(self, x, position_ids, attn_mask=None):
+#         # position_ids unused in this simple version
+#         x = x + self.attn(self.norm1(x), attn_mask)
+#         x = x + self.ffn(self.norm2(x))
+#         return x
 
 class LlamaBlock(nn.Module):
     def __init__(self, d_model, ffn_dim, n_heads, n_kv_heads, attn_dropout=0.0):
@@ -184,18 +239,15 @@ class Llama3_1B(nn.Module):
         logits = self.lm_head(x)  # (B, S, vocab_size)
         return logits
 
-# ---------------- TRAINING & LOGGING ----------------
-
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # Get Alpaca dataloader + tokenizer
     tokenizer, train_loader = get_alpaca_dataloader(
         model_name="distilbert-base-uncased",
         max_len=256,
         batch_size=4,
         shuffle=True,
-        mask_prompt=True,   # train only on the answer part
+        mask_prompt=True,
     )
 
     batch = next(iter(train_loader))
@@ -215,34 +267,62 @@ def main():
         max_seq_len=256,
     ).to(device)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5, weight_decay=0.01)
-    steps = 500
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=steps)
-    ce_loss = nn.CrossEntropyLoss()
+    base_lr = 3e-5          # a bit lower to be safe on big random model
+    total_steps = 10000     # more training
+    warmup_steps = 1000
+
+    optimizer = torch.optim.AdamW(model.parameters(), lr=base_lr, weight_decay=0.01)
+    ce_loss = nn.CrossEntropyLoss(ignore_index=-100)
+
+    def get_lr(step):
+        if step < warmup_steps:
+            return base_lr * float(step + 1) / warmup_steps
+        # cosine decay to 10% of base_lr
+        progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)
+        return base_lr * (0.1 + 0.9 * 0.5 * (1.0 + math.cos(math.pi * progress)))
+
+    # synthetic sanity check (unchanged)
+    B_syn, S_syn = 2, 10
+    tokens = torch.randint(0, vocab_size, (B_syn, S_syn + 1), device=device)
+    input_ids_syn = tokens[:, :-1]
+    labels_syn    = tokens[:, 1:]
+    attn_syn      = torch.ones_like(input_ids_syn)
+
+    with torch.no_grad():
+        logits_syn = model(input_ids_syn, attention_mask=attn_syn)
+        Bf, Sf, V = logits_syn.shape
+        syn_loss = ce_loss(
+            logits_syn.reshape(Bf * Sf, V),
+            labels_syn.reshape(Bf * Sf),
+        )
+        print("Synthetic loss:", syn_loss.item())
 
     step = 0
     for epoch in range(1000):
         for batch in train_loader:
-            if step >= steps:
+            if step >= total_steps:
                 break
 
-            input_ids = batch["input_ids"].to(device)         # (B, S)
-            labels = batch["labels"].to(device)               # (B, S)
+            input_ids = batch["input_ids"].to(device)
+            labels = batch["labels"].to(device)
             attention_mask = batch["attention_mask"].to(device)
+
+            # update LR from warmup+cosine schedule
+            lr = get_lr(step)
+            for g in optimizer.param_groups:
+                g["lr"] = lr
 
             logits = model(input_ids, attention_mask=attention_mask)
             B, S, V = logits.shape
             loss = ce_loss(
-                logits.view(B * S, V),
-                labels.view(-1),
+                logits.reshape(B * S, V),
+                labels.reshape(B * S),
             )
 
             optimizer.zero_grad()
             loss.backward()
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
-            scheduler.step()
-            lr = optimizer.param_groups[0]["lr"]
 
             mem_alloc = mem_peak = mem_reserved = 0.0
             if torch.cuda.is_available():
@@ -251,7 +331,7 @@ def main():
                 mem_reserved = torch.cuda.memory_reserved() / 1e6
 
             wandb.log({
-                "loss": float(loss.item()),
+                "loss": loss.item(),
                 "learning_rate": lr,
                 "grad_norm": float(grad_norm),
                 "mem_allocated_MB": mem_alloc,
@@ -261,14 +341,14 @@ def main():
             })
 
             print(
-                f"step={step:04d} | loss={loss.item():.4f} | lr={lr:.2e} | "
+                f"step={step:04d} | loss={loss.item():.6f} | lr={lr:.2e} | "
                 f"grad_norm={float(grad_norm):.2f} | "
                 f"mem_alloc={mem_alloc:.1f}MB mem_peak={mem_peak:.1f}MB "
                 f"mem_reserved={mem_reserved:.1f}MB"
             )
 
             step += 1
-        if step >= steps:
+        if step >= total_steps:
             break
 
     print("DONE. Check W&B dashboard for Alpaca training curves.")

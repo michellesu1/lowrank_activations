@@ -1,0 +1,12 @@
+{"time":"2025-12-11T12:35:52.780360079-05:00","level":"INFO","msg":"stream: starting","core version":"0.22.3"}
+{"time":"2025-12-11T12:35:52.994844692-05:00","level":"INFO","msg":"stream: created new stream","id":"h5fsd11c"}
+{"time":"2025-12-11T12:35:52.99514022-05:00","level":"INFO","msg":"handler: started","stream_id":"h5fsd11c"}
+{"time":"2025-12-11T12:35:52.995561482-05:00","level":"INFO","msg":"stream: started","id":"h5fsd11c"}
+{"time":"2025-12-11T12:35:52.995569967-05:00","level":"INFO","msg":"writer: started","stream_id":"h5fsd11c"}
+{"time":"2025-12-11T12:35:52.995572155-05:00","level":"INFO","msg":"sender: started","stream_id":"h5fsd11c"}
+{"time":"2025-12-11T12:41:38.611270971-05:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/hyewona-massachusetts-institute-of-technology/baseline_model_llama32_like/h5fsd11c/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2025-12-11T12:41:55.286259363-05:00","level":"INFO","msg":"stream: closing","id":"h5fsd11c"}
+{"time":"2025-12-11T12:41:55.690245867-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-12-11T12:41:55.860140637-05:00","level":"INFO","msg":"handler: closed","stream_id":"h5fsd11c"}
+{"time":"2025-12-11T12:41:55.861109948-05:00","level":"INFO","msg":"sender: closed","stream_id":"h5fsd11c"}
+{"time":"2025-12-11T12:41:55.86111698-05:00","level":"INFO","msg":"stream: closed","id":"h5fsd11c"}

@@ -1,0 +1,97 @@
+labels[0][:40]: tensor([  101,  2917,  2003,  2019,  7899,  2008,  5577,  1037,  4708,  1012,
+         4339,  1037,  3433,  2008, 23263, 28123,  1996,  5227,  1012,  1001,
+         1001,  1001,  7899,  1024,  2029,  2003,  1996,  2087, 20151,  2103,
+         1999,  2634,  1029,  1001,  1001,  1001,  3433,  1024,  2004,  1997])
+unique labels: tensor([    0,   101,   102,  1000,  1001,  1006,  1007,  1010,  1011,  1012,
+         1015,  1016,  1017,  1018,  1019,  1020,  1024,  1029,  1037,  1045,
+         1996,  1997,  1998,  1999,  2000,  2003,  2004,  2005,  2006,  2007,
+         2008,  2013,  2015,  2016,  2017,  2019,  2021,  2022,  2023,  2024,
+         2027,  2028,  2029,  2030,  2035,  2036,  2039,  2045,  2047,  2049,
+         2054,  2055,  2057,  2059,  2060,  2064,  2065,  2070,  2073,  2075,
+         2080,  2083,  2087,  2089,  2091,  2093,  2096,  2103,  2109,  2111,
+         2112,  2115,  2122,  2124,  2126,  2132,  2151,  2159,  2169,  2173,
+         2175,  2176,  2177,  2181,  2182,  2193,  2224,  2225,  2241,  2272,
+         2275,  2292,  2293,  2302,  2303,  2313,  2322,  2327,  2344,  2362,
+         2393,  2394,  2396,  2411,  2421,  2424,  2442,  2454,  2477,  2518,
+         2556,  2568,  2592,  2597,  2612,  2614,  2616,  2634,  2636,  2653,
+         2680,  2691,  2701,  2711,  2742,  2773,  2802,  2895,  2917,  2950,
+         2951,  2984,  3048,  3052,  3056,  3086,  3136,  3169,  3182,  3225,
+         3327,  3395,  3408,  3433,  3443,  3513,  3563,  3564,  3579,  3608,
+         3615,  3752,  3793,  3839,  3866,  3924,  3937,  3972,  4031,  4050,
+         4076,  4133,  4235,  4251,  4301,  4339,  4352,  4358,  4426,  4488,
+         4493,  4526,  4531,  4652,  4682,  4688,  4708,  4748,  4751,  4874,
+         4909,  4956,  5050,  5167,  5218,  5227,  5260,  5278,  5346,  5461,
+         5512,  5577,  5672,  5678,  5815,  5907,  5910,  5962,  5993,  6028,
+         6149,  6235,  6251,  6299,  6304,  6419,  6481,  6523,  6555,  6575,
+         6625,  6740,  6784,  7236,  7336,  7809,  7899,  7995,  8013,  8035,
+         8137,  8295,  8332,  8546,  8689,  8955,  9099,  9125,  9181,  9268,
+         9379,  9552, 10393, 10651, 10697, 11717, 11831, 12034, 12711, 12850,
+        12870, 13048, 13425, 13594, 13675, 13804, 13994, 14044, 14590, 14817,
+        15156, 15192, 15295, 15398, 15672, 16025, 16056, 16616, 17881, 17917,
+        19211, 19613, 19933, 20151, 20938, 21050, 21208, 22910, 23263, 23318,
+        23370, 23865, 24059, 24153, 24931, 25012, 25682, 25951, 26028, 26384,
+        28123, 29226])
+ignore_index in CE: -100
+step=0000 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1215.0MB mem_reserved=1323.3MB
+step=0001 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1600.6MB mem_reserved=1828.7MB
+step=0002 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0003 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0004 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0005 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0006 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0007 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0008 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0009 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0010 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0011 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0012 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0013 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0014 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0015 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0016 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0017 | loss=0.0000 | lr=4.98e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0018 | loss=0.0000 | lr=4.98e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0019 | loss=0.0000 | lr=4.98e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0020 | loss=0.0000 | lr=4.98e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0021 | loss=0.0000 | lr=4.98e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0022 | loss=0.0000 | lr=4.97e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0023 | loss=0.0000 | lr=4.97e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0024 | loss=0.0000 | lr=4.97e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0025 | loss=0.0000 | lr=4.97e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0026 | loss=0.0000 | lr=4.96e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0027 | loss=0.0000 | lr=4.96e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0028 | loss=0.0000 | lr=4.96e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0029 | loss=0.0000 | lr=4.96e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0030 | loss=0.0000 | lr=4.95e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0031 | loss=0.0000 | lr=4.95e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0032 | loss=0.0000 | lr=4.95e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0033 | loss=0.0000 | lr=4.94e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0034 | loss=0.0000 | lr=4.94e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0035 | loss=0.0000 | lr=4.94e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0036 | loss=0.0000 | lr=4.93e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0037 | loss=0.0000 | lr=4.93e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0038 | loss=0.0000 | lr=4.93e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0039 | loss=0.0000 | lr=4.92e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0040 | loss=0.0000 | lr=4.92e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0041 | loss=0.0000 | lr=4.91e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0042 | loss=0.0000 | lr=4.91e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0043 | loss=0.0000 | lr=4.91e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0044 | loss=0.0000 | lr=4.90e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0045 | loss=0.0000 | lr=4.90e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0046 | loss=0.0000 | lr=4.89e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0047 | loss=0.0000 | lr=4.89e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0048 | loss=0.0000 | lr=4.88e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0049 | loss=0.0000 | lr=4.88e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0050 | loss=0.0000 | lr=4.87e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0051 | loss=0.0000 | lr=4.87e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0052 | loss=0.0000 | lr=4.86e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0053 | loss=0.0000 | lr=4.86e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0054 | loss=0.0000 | lr=4.85e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+Traceback (most recent call last):
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 277, in <module>
+    main()
+    ~~~~^^
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 254, in main
+    "loss": loss.item(),
+            ~~~~~~~~~^^
+KeyboardInterrupt

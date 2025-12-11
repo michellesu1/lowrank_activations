@@ -1,0 +1,193 @@
+Traceback (most recent call last):
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/utils/_http.py", line 407, in hf_raise_for_status
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/requests/models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://huggingface.co/datasets/yahma/alpaca-cleaned/resolve/12567cabf869d7c92e573c7c783905fc160e9639/alpaca-cleaned.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/datasets/load.py", line 987, in dataset_module_factory
+    api.hf_hub_download(
+    ~~~~~~~~~~~~~~~~~~~^
+        repo_id=path,
+        ^^^^^^^^^^^^^
+    ...<3 lines>...
+        proxies=download_config.proxies,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/hf_api.py", line 5539, in hf_hub_download
+    return hf_hub_download(
+        repo_id=repo_id,
+    ...<18 lines>...
+        local_files_only=local_files_only,
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/file_download.py", line 1010, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+        # Destination
+    ...<14 lines>...
+        force_download=force_download,
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/file_download.py", line 1073, in _hf_hub_download_to_cache_dir
+    (url_to_download, etag, commit_hash, expected_size, xet_file_data, head_call_error) = _get_metadata_or_catch_error(
+                                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        repo_id=repo_id,
+        ^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+        relative_filename=relative_filename,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/file_download.py", line 1546, in _get_metadata_or_catch_error
+    metadata = get_hf_file_metadata(
+        url=url, proxies=proxies, timeout=etag_timeout, headers=headers, token=token, endpoint=endpoint
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/file_download.py", line 1463, in get_hf_file_metadata
+    r = _request_wrapper(
+        method="HEAD",
+    ...<5 lines>...
+        timeout=timeout,
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/file_download.py", line 286, in _request_wrapper
+    response = _request_wrapper(
+        method=method,
+    ...<2 lines>...
+        **params,
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/file_download.py", line 310, in _request_wrapper
+    hf_raise_for_status(response)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/utils/_http.py", line 418, in hf_raise_for_status
+    raise _format(EntryNotFoundError, message, response) from e
+huggingface_hub.errors.EntryNotFoundError: 404 Client Error. (Request ID: Root=1-693af338-7e8771ac2c2301d9116ef5ea;19bf4539-63ce-4282-ac6c-b7ba2e33c030)
+
+Entry Not Found for url: https://huggingface.co/datasets/yahma/alpaca-cleaned/resolve/12567cabf869d7c92e573c7c783905fc160e9639/alpaca-cleaned.py.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 350, in <module>
+    main()
+    ~~~~^^
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 248, in main
+    tokenizer, train_loader = get_alpaca_dataloader(
+                              ~~~~~~~~~~~~~~~~~~~~~^
+        model_name="distilbert-base-uncased",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        mask_prompt=True,   # train only on the answer part
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/orcd/home/002/hyewona/lr-act/current_models/alpaca_dataset.py", line 73, in get_alpaca_dataloader
+    dataset = build_alpaca_dataset(tokenizer, max_len=max_len, mask_prompt=False)
+  File "/orcd/home/002/hyewona/lr-act/current_models/alpaca_dataset.py", line 35, in build_alpaca_dataset
+    alpaca = load_dataset("yahma/alpaca-cleaned")["train"]
+             ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/datasets/load.py", line 1397, in load_dataset
+    builder_instance = load_dataset_builder(
+        path=path,
+    ...<10 lines>...
+        **config_kwargs,
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/datasets/load.py", line 1137, in load_dataset_builder
+    dataset_module = dataset_module_factory(
+        path,
+    ...<5 lines>...
+        cache_dir=cache_dir,
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/datasets/load.py", line 1001, in dataset_module_factory
+    return HubDatasetModuleFactory(
+           ~~~~~~~~~~~~~~~~~~~~~~~^
+        path,
+        ^^^^^
+    ...<5 lines>...
+        use_exported_dataset_infos=use_exported_dataset_infos,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ).get_module()
+    ^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/datasets/load.py", line 566, in __init__
+    increase_load_count(name)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/datasets/load.py", line 193, in increase_load_count
+    get_session().head(
+    ~~~~~~~~~~~~~~~~~~^
+        "/".join((config.S3_DATASETS_BUCKET_PREFIX, name, name + ".py")),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        headers={"User-Agent": get_datasets_user_agent()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        timeout=3,
+        ^^^^^^^^^^
+    )
+    ^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/requests/sessions.py", line 624, in head
+    return self.request("HEAD", url, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/huggingface_hub/utils/_http.py", line 95, in send
+    return super().send(request, *args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/requests/adapters.py", line 644, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/urllib3/connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/urllib3/connectionpool.py", line 1093, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/urllib3/connection.py", line 790, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/urllib3/connection.py", line 969, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/urllib3/util/ssl_.py", line 480, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/urllib3/util/ssl_.py", line 524, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hyewona/miniconda3/lib/python3.13/ssl.py", line 455, in wrap_socket
+    return self.sslsocket_class._create(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sock=sock,
+        ^^^^^^^^^^
+    ...<5 lines>...
+        session=session
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/hyewona/miniconda3/lib/python3.13/ssl.py", line 1076, in _create
+    self.do_handshake()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/home/hyewona/miniconda3/lib/python3.13/ssl.py", line 1372, in do_handshake
+    self._sslobj.do_handshake()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+KeyboardInterrupt

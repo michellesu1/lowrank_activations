@@ -1,0 +1,102 @@
+{
+  "os":  "Linux-4.18.0-372.9.1.el8.x86_64-x86_64-with-glibc2.28",
+  "python":  "CPython 3.13.5",
+  "startedAt":  "2025-12-11T16:30:04.256911Z",
+  "program":  "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py",
+  "codePath":  "current_models/baseline_model_v2.py",
+  "codePathLocal":  "baseline_model_v2.py",
+  "git":  {
+    "remote":  "git@github.mit.edu:hyewona/lr_activations.git",
+    "commit":  "360f6df6f3663f1a3dc490433e3ee9f0963ab87b"
+  },
+  "email":  "hyewona@mit.edu",
+  "root":  "/orcd/home/002/hyewona/lr-act/current_models",
+  "host":  "node2804",
+  "executable":  "/orcd/home/002/hyewona/lr-act/lora/bin/python3",
+  "cpu_count":  64,
+  "cpu_count_logical":  128,
+  "gpu":  "NVIDIA L40S",
+  "gpu_count":  2,
+  "disk":  {
+    "/":  {
+      "total":  "925842968576",
+      "used":  "18011598848"
+    }
+  },
+  "memory":  {
+    "total":  "1081411801088"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA L40S",
+      "memoryTotal":  "48305799168",
+      "cudaCores":  18176,
+      "architecture":  "Ada",
+      "uuid":  "GPU-d6f5f3bf-a2d7-8e97-cf7d-4adb3f39d453"
+    },
+    {
+      "name":  "NVIDIA L40S",
+      "memoryTotal":  "48305799168",
+      "cudaCores":  18176,
+      "architecture":  "Ada",
+      "uuid":  "GPU-e2e01c26-2071-def9-1e67-4107bf909d3c"
+    }
+  ],
+  "cudaVersion":  "12.4",
+  "slurm":  {
+    "cluster_name":  "eofe7",
+    "conf":  "/etc/slurm/slurm.conf",
+    "cpus_on_node":  "4",
+    "cpus_per_task":  "4",
+    "gpus_on_node":  "2",
+    "gtids":  "0",
+    "job_account":  "mit_general",
+    "job_cpus_per_node":  "4",
+    "job_end_time":  "1765471536",
+    "job_gid":  "100208845",
+    "job_gpus":  "1,3",
+    "job_id":  "7113227",
+    "job_name":  "interactive",
+    "job_nodelist":  "node2804",
+    "job_num_nodes":  "1",
+    "job_partition":  "mit_normal_gpu",
+    "job_qos":  "normal",
+    "job_start_time":  "1765469736",
+    "job_uid":  "208845",
+    "job_user":  "hyewona",
+    "jobid":  "7113227",
+    "launch_node_ipaddr":  "10.1.221.1",
+    "localid":  "0",
+    "mem_per_node":  "12288",
+    "mpi_type":  "none",
+    "nnodes":  "1",
+    "nodeid":  "0",
+    "nodelist":  "node2804",
+    "nprocs":  "1",
+    "ntasks":  "1",
+    "oom_kill_step":  "0",
+    "prio_process":  "0",
+    "procid":  "0",
+    "pty_port":  "36167",
+    "pty_win_col":  "191",
+    "pty_win_row":  "24",
+    "script_context":  "prolog_task",
+    "srun_comm_host":  "10.1.221.1",
+    "srun_comm_port":  "36895",
+    "step_id":  "4294967290",
+    "step_launcher_port":  "36895",
+    "step_nodelist":  "node2804",
+    "step_num_nodes":  "1",
+    "step_num_tasks":  "1",
+    "step_tasks_per_node":  "1",
+    "stepid":  "4294967290",
+    "submit_dir":  "/orcd/home/002/hyewona/lr-act",
+    "submit_host":  "orcd-login001.mit.edu",
+    "task_pid":  "2654018",
+    "tasks_per_node":  "1",
+    "topology_addr":  "node2804",
+    "topology_addr_pattern":  "node",
+    "tres_per_task":  "cpu=4"
+  },
+  "writerId":  "qbjji8yf5eueclbcpxcodgofrn8w0gc1"
+}

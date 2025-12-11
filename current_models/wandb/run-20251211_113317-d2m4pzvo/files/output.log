@@ -1,0 +1,56 @@
+labels[0][:40]: tensor([  101,  2917,  2003,  2019,  7899,  2008,  5577,  1037,  4708,  1010,
+        12739,  2007,  2019,  7953,  2008,  3640,  2582,  6123,  1012,  4339,
+         1037,  3433,  2008, 23263, 28123,  1996,  5227,  1012,  1001,  1001,
+         1001,  7899,  1024,  1999,  1037,  2445,  2862,  1010,  4066,  3787])
+unique labels: tensor([    0,   101,   102,  1000,  1001,  1005,  1010,  1011,  1012,  1015,
+         1017,  1019,  1022,  1023,  1024,  1029,  1031,  1033,  1035,  1037,
+         1055,  1996,  1997,  1998,  1999,  2000,  2003,  2004,  2005,  2006,
+         2007,  2008,  2013,  2015,  2016,  2019,  2023,  2027,  2028,  2030,
+         2031,  2036,  2037,  2038,  2041,  2042,  2043,  2047,  2051,  2053,
+         2055,  2057,  2060,  2062,  2064,  2075,  2077,  2081,  2083,  2084,
+         2085,  2086,  2087,  2088,  2096,  2107,  2111,  2122,  2126,  2129,
+         2130,  2156,  2169,  2182,  2195,  2224,  2227,  2344,  2367,  2368,
+         2376,  2412,  2419,  2437,  2444,  2445,  2500,  2582,  2591,  2592,
+         2613,  2653,  2678,  2716,  2773,  2814,  2825,  2844,  2846,  2862,
+         2865,  2904,  2917,  2936,  2945,  2963,  2974,  3011,  3073,  3271,
+         3278,  3288,  3292,  3362,  3378,  3431,  3433,  3452,  3496,  3499,
+         3522,  3553,  3571,  3594,  3604,  3605,  3633,  3640,  3745,  3787,
+         3793,  3857,  3903,  3971,  3989,  4050,  4066,  4125,  4274,  4279,
+         4339,  4378,  4411,  4455,  4500,  4684,  4708,  4807,  4919,  5189,
+         5198,  5227,  5366,  5396,  5554,  5577,  5661,  5733,  5743,  6034,
+         6039,  6123,  6129,  6208,  6251,  6387,  6709,  6918,  7107,  7127,
+         7210,  7224,  7248,  7404,  7484,  7512,  7532,  7578,  7603,  7899,
+         7953,  8413,  8526,  8598,  8744,  8803,  9124,  9308,  9530,  9885,
+        10639, 10740, 12034, 12368, 12607, 12739, 13896, 14057, 14436, 15127,
+        15156, 15406, 15865, 16636, 17120, 19059, 19616, 22028, 22726, 23263,
+        24732, 28123])
+ignore_index in CE: -100
+Traceback (most recent call last):
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 332, in <module>
+    main()
+    ~~~~^^
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 284, in main
+    logits = model(input_ids, attention_mask=attention_mask)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 232, in forward
+    x = layer(x, pos, attn_mask_4d)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 165, in forward
+    x = x + self.attn(self.norm1(x), attn_mask)
+            ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 84, in forward
+    z = z.transpose(1, 2).contiguous().view(B, S, D)
+RuntimeError: shape '[4, 256, 512]' is invalid for input of size 2097152

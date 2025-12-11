@@ -40,22 +40,31 @@ def build_alpaca_dataset(tokenizer, max_len=256, mask_prompt=False):
 
         toks = tokenizer(
             full_text,
-            max_length=max_len,
+            max_length=max_len + 1,      # +1 so we can shift
             truncation=True,
             padding="max_length",
         )
 
-        input_ids = toks["input_ids"]
-        labels = input_ids.copy()  # no -100 anywhere
+        ids = toks["input_ids"]          # length max_len+1
+        input_ids = ids[:-1]             # tokens 0..L-2
+        labels = ids[1:]                 # tokens 1..L-1
 
-        # TEMP: disable masking completely
-        # if mask_prompt: ...
+        attn = toks["attention_mask"]    # length max_len+1
+        attention_mask = attn[:-1]       # match input_ids length
+
+        # Optional: mask prompt tokens in labels
+        if mask_prompt:
+            prompt_ids = tokenizer(prompt, add_special_tokens=False)["input_ids"]
+            cutoff = min(len(prompt_ids), len(labels))
+            for i in range(cutoff):
+                labels[i] = -100         # ignore in loss
 
         return {
             "input_ids": input_ids,
             "labels": labels,
-            "attention_mask": toks["attention_mask"],
+            "attention_mask": attention_mask,
         }
+
 
     encoded = alpaca.map(encode_row, remove_columns=alpaca.column_names)
     encoded.set_format(type="torch", columns=["input_ids", "labels", "attention_mask"])

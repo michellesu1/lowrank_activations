@@ -1,0 +1,122 @@
+labels[0][:40]: tensor([  101,  2917,  2003,  2019,  7899,  2008,  5577,  1037,  4708,  1012,
+         4339,  1037,  3433,  2008, 23263, 28123,  1996,  5227,  1012,  1001,
+         1001,  1001,  7899,  1024,  2507,  1037,  2862,  1997,  5167,  2008,
+         1037,  2711,  2064,  2202,  2006,  1037, 13215,  4440,  1012,  1001])
+unique labels: tensor([    0,   101,   102,  1001,  1005,  1006,  1007,  1008,  1010,  1011,
+         1012,  1015,  1016,  1017,  1018,  1019,  1020,  1021,  1022,  1023,
+         1024,  1037,  1055,  1996,  1997,  1998,  1999,  2000,  2003,  2004,
+         2005,  2006,  2007,  2008,  2011,  2012,  2013,  2015,  2019,  2022,
+         2023,  2030,  2034,  2037,  2041,  2043,  2044,  2046,  2052,  2064,
+         2075,  2088,  2089,  2090,  2107,  2122,  2132,  2141,  2146,  2151,
+         2152,  2158,  2162,  2173,  2182,  2184,  2191,  2202,  2206,  2207,
+         2241,  2242,  2248,  2250,  2279,  2291,  2300,  2304,  2319,  2327,
+         2338,  2350,  2367,  2376,  2408,  2422,  2426,  2436,  2478,  2500,
+         2504,  2507,  2536,  2543,  2562,  2565,  2582,  2598,  2614,  2616,
+         2618,  2640,  2659,  2665,  2669,  2681,  2689,  2711,  2731,  2732,
+         2760,  2783,  2784,  2788,  2791,  2833,  2838,  2846,  2862,  2875,
+         2917,  2944,  2951,  3001,  3042,  3048,  3074,  3085,  3104,  3110,
+         3112,  3124,  3147,  3168,  3177,  3207,  3217,  3256,  3260,  3279,
+         3330,  3357,  3372,  3409,  3433,  3439,  3443,  3444,  3468,  3482,
+         3503,  3508,  3560,  3612,  3640,  3655,  3778,  3785,  3981,  3992,
+         4030,  4146,  4187,  4216,  4251,  4253,  4297,  4309,  4339,  4394,
+         4440,  4469,  4493,  4512,  4523,  4524,  4550,  4633,  4655,  4681,
+         4708,  4762,  4800,  4824,  4860,  4950,  4954,  4989,  5067,  5080,
+         5142,  5167,  5173,  5227,  5257,  5263,  5300,  5346,  5442,  5577,
+         5644,  5676,  5689,  5691,  5777,  5871,  5882,  5929,  5946,  5983,
+         6007,  6090,  6112,  6123,  6132,  6217,  6235,  6366,  6413,  6510,
+         6530,  6804,  6879,  6994,  7217,  7341,  7349,  7356,  7533,  7640,
+         7741,  7766,  7815,  7882,  7893,  7899,  7953,  8397,  8434,  8587,
+         8641,  8847,  8934,  8974,  9014,  9311,  9442,  9623,  9788,  9905,
+        10268, 10274, 10278, 10415, 10539, 10747, 10761, 10857, 11015, 11307,
+        11463, 11566, 11669, 11687, 11709, 11746, 11753, 11868, 12039, 12109,
+        12146, 12483, 12490, 12735, 12739, 12836, 12856, 12878, 13039, 13215,
+        13342, 13346, 13387, 13425, 13511, 13905, 13907, 14026, 14038, 14211,
+        14355, 14477, 14658, 14767, 14774, 14936, 14976, 15133, 15173, 15257,
+        15579, 15672, 16012, 16247, 16307, 16360, 16636, 16681, 17463, 17596,
+        18063, 18213, 18422, 18623, 18651, 18847, 18907, 18911, 19352, 19373,
+        19548, 19623, 19707, 19939, 20185, 20334, 20557, 20625, 21183, 21346,
+        23073, 23263, 23442, 23902, 24410, 26018, 26452, 27870, 28123, 28406,
+        29395, 29479])
+ignore_index in CE: -100
+step=0000 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1215.0MB mem_reserved=1323.3MB
+step=0001 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1600.6MB mem_reserved=1828.7MB
+step=0002 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0003 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0004 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0005 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0006 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0007 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0008 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0009 | loss=0.0000 | lr=5.00e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0010 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0011 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0012 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0013 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0014 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0015 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0016 | loss=0.0000 | lr=4.99e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0017 | loss=0.0000 | lr=4.98e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0018 | loss=0.0000 | lr=4.98e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0019 | loss=0.0000 | lr=4.98e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0020 | loss=0.0000 | lr=4.98e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0021 | loss=0.0000 | lr=4.98e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0022 | loss=0.0000 | lr=4.97e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0023 | loss=0.0000 | lr=4.97e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0024 | loss=0.0000 | lr=4.97e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0025 | loss=0.0000 | lr=4.97e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0026 | loss=0.0000 | lr=4.96e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0027 | loss=0.0000 | lr=4.96e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0028 | loss=0.0000 | lr=4.96e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0029 | loss=0.0000 | lr=4.96e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0030 | loss=0.0000 | lr=4.95e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0031 | loss=0.0000 | lr=4.95e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0032 | loss=0.0000 | lr=4.95e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0033 | loss=0.0000 | lr=4.94e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0034 | loss=0.0000 | lr=4.94e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0035 | loss=0.0000 | lr=4.94e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0036 | loss=0.0000 | lr=4.93e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0037 | loss=0.0000 | lr=4.93e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0038 | loss=0.0000 | lr=4.93e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0039 | loss=0.0000 | lr=4.92e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0040 | loss=0.0000 | lr=4.92e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0041 | loss=0.0000 | lr=4.91e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0042 | loss=0.0000 | lr=4.91e-05 | grad_norm=0.00 | mem_alloc=896.8MB mem_peak=1601.0MB mem_reserved=1954.5MB
+step=0043 | loss=0.0000 | lr=4.91e-05 | grad_norm=0.00 | mem_alloc=897.6MB mem_peak=1601.0MB mem_reserved=1954.5MB
+Traceback (most recent call last):
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 277, in <module>
+    main()
+    ~~~~^^
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 233, in main
+    logits = model(input_ids, attention_mask=attention_mask)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 181, in forward
+    x = layer(x, pos, attn_mask_4d)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 127, in forward
+    x = x + self.attn(self.norm1(x), position_ids, attn_mask)
+            ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/current_models/baseline_model_v2.py", line 102, in forward
+    return self.out_proj(z)
+           ~~~~~~~~~~~~~^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1775, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1786, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/orcd/home/002/hyewona/lr-act/lora/lib/python3.13/site-packages/torch/nn/modules/linear.py", line 134, in forward
+    return F.linear(input, self.weight, self.bias)
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
