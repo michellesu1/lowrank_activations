@@ -10,7 +10,11 @@ from alpaca_dataset import build_alpaca_dataset, get_alpaca_tokenizer
 
 
 PROJECT_NAME = "baseline_llama32_1b_like_sdpa_bf16_lora_pt"
+ENTITY_NAME = "mchllsu1-massachusetts-institute-of-technology"
 MODEL_ID = "meta-llama/Llama-3.2-1B-Instruct"
+
+print("W&B URL:", wandb.run.url)
+
 
 MAX_LEN = 256
 TRAIN_BATCH_SIZE = 4
@@ -292,7 +296,7 @@ def evaluate(model, dev_loader, ce_loss, device):
 # ---------------- TRAINING & EMBEDDING INIT ----------------
 
 def main():
-    wandb.init(project=PROJECT_NAME)
+    wandb.init(project=PROJECT_NAME, entity = ENTITY_NAME)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -457,11 +461,19 @@ def main():
 
                 step += 1
 
+        # flush leftover grads at end of epoch
+        if (batch_idx + 1) % ACCUM_STEPS != 0:
+            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer.step()
+            optimizer.zero_grad()
+            step += 1
+
+
         if step >= total_steps:
             break
 
     print("DONE. Check W&B for train and val curves for baseline Llama3_1B + LoRA.")
-
+    wandb.finish()
 
 if __name__ == "__main__":
     main()

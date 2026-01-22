@@ -1,0 +1,32 @@
+# W&B
+wandb/
+
+# Python
+__pycache__/
+*.pyc
+
+# Model checkpoints / artifacts
+*_checkpoint/
+current_models/
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Hugging Face / datasets cache
+.cache/
+hf_cache/
+datasets_cache/
+transformers_cache/
+
+# Env / secrets
+.env
+.netrc
+*.key
+*.pem
+
+# OS / editor
+.DS_Store
+.vscode/
+
+
